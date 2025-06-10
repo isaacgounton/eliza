@@ -15,7 +15,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g bun@1.2.5 turbo@2.3.3
+RUN npm install -g turbo@2.3.3
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
@@ -35,13 +35,21 @@ RUN apt-get update && \
 # Modify the init-submodules script to handle missing .git directory
 RUN sed -i 's/git submodule update --init --recursive/if [ -d ".git" ]; then git submodule update --init --recursive; else echo "No .git directory found, skipping submodule initialization"; fi/' scripts/init-submodules.sh
 
-# Install dependencies with npm ignore-scripts to avoid postinstall issues
+# Set environment variables for build compatibility
+ENV TURBO_TELEMETRY_DISABLED=1
+ENV CI=true
+ENV NODE_ENV=development
+
+# Install dependencies using npm instead of bun to avoid binary compatibility issues
 RUN npm config set ignore-scripts true && \
-    bun install --no-cache && \
+    npm install --legacy-peer-deps && \
     npm config set ignore-scripts false
 
-# Run the build without triggering problematic postinstall scripts
-RUN bun run build
+# Clear any cached builds and force a clean build
+RUN npm run clean || true
+
+# Use npm for the build process instead of bun
+RUN npm run build
 
 FROM node:23.3.0-slim
 
@@ -57,7 +65,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g bun@1.2.5 turbo@2.3.3
+RUN npm install -g turbo@2.3.3
 
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/turbo.json ./
@@ -73,4 +81,4 @@ ENV NODE_ENV=production
 EXPOSE 3000
 EXPOSE 50000-50100/udp
 
-CMD ["bun", "run", "start"]
+CMD ["npm", "run", "start"]
