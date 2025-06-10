@@ -32,13 +32,15 @@ RUN apt-get update && \
     (git clone https://github.com/elizaOS/.cursor.git .cursor || \
     echo "Warning: Failed to clone .cursor repository, continuing without it")
 
+# Modify the init-submodules script to handle missing .git directory
+RUN sed -i 's/git submodule update --init --recursive/if [ -d ".git" ]; then git submodule update --init --recursive; else echo "No .git directory found, skipping submodule initialization"; fi/' scripts/init-submodules.sh
+
+# Install dependencies with npm ignore-scripts to avoid postinstall issues
 RUN npm config set ignore-scripts true && \
     bun install --no-cache && \
     npm config set ignore-scripts false
 
-# Clear any potential cached binaries and reinstall build tools
-RUN npm rebuild
-
+# Run the build without triggering problematic postinstall scripts
 RUN bun run build
 
 FROM node:23.3.0-slim
