@@ -32,7 +32,9 @@ RUN apt-get update && \
     (git clone https://github.com/elizaOS/.cursor.git .cursor || \
     echo "Warning: Failed to clone .cursor repository, continuing without it")
 
-RUN bun install --no-cache
+RUN npm config set ignore-scripts true && \
+    bun install --no-cache && \
+    npm config set ignore-scripts false
 
 # Clear any potential cached binaries and reinstall build tools
 RUN npm rebuild
