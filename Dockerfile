@@ -19,15 +19,13 @@ RUN npm install -g bun@1.2.5 turbo@2.3.3
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# Copy git files and metadata first
-COPY .git ./.git
-COPY .gitmodules ./
 COPY package.json turbo.json tsconfig.json lerna.json renovate.json .npmrc ./
 COPY scripts ./scripts
 COPY packages ./packages
 
-# Initialize git submodules properly
-RUN git submodule update --init --recursive
+# Instead of trying to copy .git, clone the .cursor submodule directly
+RUN mkdir -p .cursor && \
+    git clone https://github.com/elizaOS/.cursor.git .cursor
 
 RUN bun install --no-cache
 
