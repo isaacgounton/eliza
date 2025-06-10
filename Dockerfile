@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 node:23.3.0-slim AS builder
+FROM node:23.3.0-slim AS builder
 
 WORKDIR /app
 
@@ -19,18 +19,24 @@ RUN npm install -g bun@1.2.5 turbo@2.3.3
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
+# Copy git files and metadata first
+COPY .git ./.git
+COPY .gitmodules ./
 COPY package.json turbo.json tsconfig.json lerna.json renovate.json .npmrc ./
 COPY scripts ./scripts
 COPY packages ./packages
 
-RUN bun install --no-cache --ignore-scripts
+# Initialize git submodules properly
+RUN git submodule update --init --recursive
 
-# Rebuild native modules for the correct architecture
-RUN bun rebuild
+RUN bun install --no-cache
+
+# Clear any potential cached binaries and reinstall build tools
+RUN npm rebuild
 
 RUN bun run build
 
-FROM --platform=linux/amd64 node:23.3.0-slim
+FROM node:23.3.0-slim
 
 WORKDIR /app
 
