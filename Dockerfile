@@ -23,7 +23,7 @@ COPY package.json turbo.json tsconfig.json lerna.json renovate.json .npmrc ./
 COPY scripts ./scripts
 COPY packages ./packages
 
-RUN bun install --no-cache
+RUN bun install --no-cache --ignore-scripts
 
 RUN bun run build
 
