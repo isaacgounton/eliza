@@ -25,6 +25,9 @@ COPY packages ./packages
 
 RUN bun install --no-cache --ignore-scripts
 
+# Rebuild native modules for the correct architecture
+RUN bun rebuild
+
 RUN bun run build
 
 FROM --platform=linux/amd64 node:23.3.0-slim
