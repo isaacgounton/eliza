@@ -1,4 +1,4 @@
-FROM node:23.3.0-slim AS builder
+FROM --platform=linux/amd64 node:23.3.0-slim AS builder
 
 WORKDIR /app
 
@@ -27,7 +27,7 @@ RUN bun install --no-cache --ignore-scripts
 
 RUN bun run build
 
-FROM node:23.3.0-slim
+FROM --platform=linux/amd64 node:23.3.0-slim
 
 WORKDIR /app
 
