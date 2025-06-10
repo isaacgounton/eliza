@@ -11,9 +11,14 @@ RUN apt-get update && \
     git \
     make \
     python3 \
-    unzip && \
+    unzip \
+    ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install bun using the official installer to ensure correct binary
+RUN curl -fsSL https://bun.sh/install | bash && \
+    ln -s /root/.bun/bin/bun /usr/local/bin/bun
 
 RUN npm install -g turbo@2.3.3
 
@@ -23,12 +28,8 @@ COPY package.json turbo.json tsconfig.json lerna.json renovate.json .npmrc ./
 COPY scripts ./scripts
 COPY packages ./packages
 
-# Install ca-certificates for SSL verification and clone the .cursor submodule
-RUN apt-get update && \
-    apt-get install -y ca-certificates && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    mkdir -p .cursor && \
+# Clone the .cursor submodule
+RUN mkdir -p .cursor && \
     (git clone https://github.com/elizaOS/.cursor.git .cursor || \
     echo "Warning: Failed to clone .cursor repository, continuing without it")
 
@@ -40,16 +41,16 @@ ENV TURBO_TELEMETRY_DISABLED=1
 ENV CI=true
 ENV NODE_ENV=development
 
-# Install dependencies using npm instead of bun to avoid binary compatibility issues
+# Install dependencies using bun (required for workspace: protocol)
 RUN npm config set ignore-scripts true && \
-    npm install --legacy-peer-deps && \
+    bun install --no-cache && \
     npm config set ignore-scripts false
 
 # Clear any cached builds and force a clean build
-RUN npm run clean || true
+RUN bun run clean || true
 
-# Use npm for the build process instead of bun
-RUN npm run build
+# Use bun for the build process (required for workspace dependencies)
+RUN bun run build
 
 FROM node:23.3.0-slim
 
@@ -61,9 +62,14 @@ RUN apt-get update && \
     ffmpeg \
     git \
     python3 \
-    unzip && \
+    unzip \
+    ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install bun using the official installer
+RUN curl -fsSL https://bun.sh/install | bash && \
+    ln -s /root/.bun/bin/bun /usr/local/bin/bun
 
 RUN npm install -g turbo@2.3.3
 
@@ -81,4 +87,4 @@ ENV NODE_ENV=production
 EXPOSE 3000
 EXPOSE 50000-50100/udp
 
-CMD ["npm", "run", "start"]
+CMD ["bun", "run", "start"]
