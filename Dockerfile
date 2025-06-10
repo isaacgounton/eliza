@@ -23,9 +23,14 @@ COPY package.json turbo.json tsconfig.json lerna.json renovate.json .npmrc ./
 COPY scripts ./scripts
 COPY packages ./packages
 
-# Instead of trying to copy .git, clone the .cursor submodule directly
-RUN mkdir -p .cursor && \
-    git clone https://github.com/elizaOS/.cursor.git .cursor
+# Install ca-certificates for SSL verification and clone the .cursor submodule
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p .cursor && \
+    (git clone https://github.com/elizaOS/.cursor.git .cursor || \
+    echo "Warning: Failed to clone .cursor repository, continuing without it")
 
 RUN bun install --no-cache
 
